@@ -1,4 +1,9 @@
-import { App, LogLevel, GenericMessageEvent } from '@slack/bolt';
+import {
+  App,
+  LogLevel,
+  GenericMessageEvent,
+  ReactionMessageItem,
+} from '@slack/bolt';
 
 const app = new App({
   logLevel: LogLevel.DEBUG,
@@ -60,6 +65,15 @@ app.view('modal-id', async ({ ack, view, logger }) => {
 app.message('こんにちは', async ({ message, say }) => {
   const m = message as GenericMessageEvent;
   await say(`:wave: こんにちは <@${m.user}>！`);
+});
+
+// リアクションに対する対応
+app.event('reaction_added', async ({ event, client }) => {
+  const i = event.item as ReactionMessageItem;
+  await client.chat.postMessage({
+    channel: i.channel,
+    text: `:wave: リアクションありがとう :${event.reaction}:`,
+  });
 });
 
 (async () => {
