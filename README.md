@@ -18,6 +18,27 @@
 - TypeScript Version 4.3.5 以上
 - PostgreSQL 12.7 以上
 
+# DB の設定
+
+`.env` ファイルに以下を記載、`DTABASE_URL` プロパティを設定。
+
+```
+# Environment variables declared in this file are automatically made available to Prisma.
+# See the documentation for more detail: https://pris.ly/d/prisma-schema#using-environment-variables
+
+# Prisma supports the native connection string format for PostgreSQL, MySQL, SQL Server and SQLite.
+# See the documentation for all the connection string options: https://pris.ly/d/connection-strings
+
+DATABASE_URL="postgresql://johndoe:randompassword@localhost:5432/serval_bolt?schema=public"
+```
+
+# DB の環境準備
+
+```
+npm i
+npx prisma migrate dev --name init
+```
+
 # 起動方法
 
 ソースコードの展開後、

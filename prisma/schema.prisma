@@ -1,0 +1,28 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Goodcounts {
+  userId      String   @id @db.VarChar(255)
+  goodcount   Int
+  @@index([goodcount])
+}
+
+model Goodreactions {
+  itemUserId       String   @db.VarChar(255)
+  reactionUserId   String   @db.VarChar(255)
+  itemChannel      String   @db.VarChar(255)
+  itmeType         String   @db.VarChar(255)
+  itemTs           String   @db.VarChar(255)
+  eventTs          String   @db.VarChar(255)
+  @@id([itemUserId, reactionUserId, itemChannel, itmeType, itemTs])
+  @@index([eventTs])
+}
