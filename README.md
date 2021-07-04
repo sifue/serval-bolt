@@ -7,10 +7,10 @@
 - いいね :+1: の数をカウントしてくれる
 - 特定の数になると本人を褒めてくれる
 - 「いいねいくつ？」と聞くと自身のいいねの数を教えてくれる
-
-## 実装予定の機能
-
-- 入室時メッセージの表示
+- 「入室メッセージを登録して %USERNAME%さんいらっしゃい。ここは%ROOMNAME%です。」のように発言すると「%USERNAME%さんいらっしゃい。ここは%ROOMNAME%です。」をそのチャンネルの入室メッセージとして登録します。改行するには「\n」を改行したい場所に差し込みます。
+  入室メッセージの %USERNAME% は表示名またはユーザー名に、 %ROOMNAME% は #programming のようなチャンネル名に置換されます。
+- 「入室メッセージを消して」のように発言すると、そのチャンネルの入室メッセージを解除します。
+- 「入室メッセージを見せて」のように発言すると、そのチャンネルの入室メッセージを表示します。
 
 # 必要条件
 
@@ -59,10 +59,10 @@ env SLACK_BOT_TOKEN="xoxb-0000000000000000000-000000000000000000" SLACK_APP_TOKE
 ## Event Subscription の設定
 
 - message.channels
-- member_left_channel (退出メッセージ機能の予定)
-- member_joined_channel (入室メッセージ機能の予定)
 - reaction_added (いいねのカウント機能)
-- reaction_removed (いいねカウントの削除に対応の予定)
+- reaction_removed (いいねカウントの削除機能)
+- member_joined_channel (入室メッセージ機能)
+- member_left_channel (退出メッセージ機能の予定)
 
 ## Bot Token Scope の設定
 

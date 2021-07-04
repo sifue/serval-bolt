@@ -127,7 +127,73 @@ app.event('reaction_removed', async ({ event, client }) => {
   );
 });
 
+// 入室メッセージ機能
+import * as fs from 'fs';
+const joinMessagesFileName = './join_messages.json';
+let joinMessages = new Map(); // key: チャンネルID, value: 入室メッセージ
+
+function saveJoinMessages() {
+  fs.writeFileSync(
+    joinMessagesFileName,
+    JSON.stringify(Array.from(joinMessages)),
+    'utf8'
+  );
+}
+
+function loadJoinMessages() {
+  try {
+    const data = fs.readFileSync(joinMessagesFileName, 'utf8');
+    joinMessages = new Map(JSON.parse(data));
+  } catch (e) {
+    console.log('[INFO] loadJoinMessages Error:');
+    console.log(e);
+    console.log('[INFO] Use empty loadJoinMessages.');
+  }
+}
+
+// 発言したチャンネルに入室メッセージを設定する
+app.message(/^入室メッセージを登録して (.*)/i, async ({ message, say }) => {
+  const m = message as GenericMessageEvent;
+  const parsed = m.text?.match(/^入室メッセージを登録して (.*)/);
+  if (parsed) {
+    const joinMessage = parsed[1];
+    joinMessages.set(m.channel, joinMessage);
+    saveJoinMessages();
+    await say(`入室メッセージ:「${joinMessage}」を登録したよ。`);
+  }
+});
+
+// 発言したチャンネルの入室メッセージの設定を解除する
+app.message(/^入室メッセージを消して/i, async ({ message, say }) => {
+  const m = message as GenericMessageEvent;
+  joinMessages.delete(m.channel);
+  saveJoinMessages();
+  await say(`入室メッセージを削除したよ。`);
+});
+
+// 発言したチャンネルの入室メッセージの設定を確認する
+app.message(/^入室メッセージを見せて/i, async ({ message, say }) => {
+  const m = message as GenericMessageEvent;
+  const value = joinMessages.get(m.channel);
+  if (value) {
+    const message = value.replace(/\\n/g, '\n');
+    await say(`現在登録されている入室メッセージは\n\n${message}\n\nだよ。`);
+  }
+});
+
+// 部屋に入ったユーザーへの入室メッセージを案内 %USERNAME% はユーザー名に、%ROOMNAME% は部屋名に、\\n は改行コード(\n)に置換
+app.event('member_joined_channel', async ({ event, client }) => {
+  const value = joinMessages.get(event.channel);
+  const message = value
+    .replace('%USERNAME%', `<@${event.user}>`)
+    .replace('%ROOMNAME%', `<#${event.channel}>`)
+    .replace(/\\n/g, '\n');
+  await client.chat.postMessage({ channel: event.channel, text: message });
+});
+
 (async () => {
   await app.start();
   console.log('[INFO] ⚡️ Bolt app started');
+
+  loadJoinMessages();
 })();
