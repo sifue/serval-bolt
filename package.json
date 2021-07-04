@@ -9,7 +9,7 @@
     "prepare": "husky install"
   },
   "author": "sifue",
-  "license": "ISC",
+  "license": "MIT",
   "devDependencies": {
     "@types/node": "^16.0.0",
     "husky": "^7.0.0",
