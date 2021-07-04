@@ -1,5 +1,5 @@
 # サーバル bot (Bolt 版)
-
+いいね :+1: の数をカウントするSlackのボット
 [Bolt for JavaScript](https://github.com/slackapi/bolt-js) を利用したサーバル bot
 
 ## 機能
