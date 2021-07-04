@@ -36,7 +36,7 @@ DATABASE_URL="postgresql://johndoe:randompassword@localhost:5432/serval_bolt?sch
 
 ```
 npm i
-npx prisma migrate dev --name init
+npx prisma db push
 ```
 
 # 起動方法

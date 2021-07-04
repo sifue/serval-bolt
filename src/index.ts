@@ -184,11 +184,13 @@ app.message(/^入室メッセージを見せて/i, async ({ message, say }) => {
 // 部屋に入ったユーザーへの入室メッセージを案内 %USERNAME% はユーザー名に、%ROOMNAME% は部屋名に、\\n は改行コード(\n)に置換
 app.event('member_joined_channel', async ({ event, client }) => {
   const value = joinMessages.get(event.channel);
-  const message = value
-    .replace('%USERNAME%', `<@${event.user}>`)
-    .replace('%ROOMNAME%', `<#${event.channel}>`)
-    .replace(/\\n/g, '\n');
-  await client.chat.postMessage({ channel: event.channel, text: message });
+  if (value) {
+    const message = value
+      .replace('%USERNAME%', `<@${event.user}>`)
+      .replace('%ROOMNAME%', `<#${event.channel}>`)
+      .replace(/\\n/g, '\n');
+    await client.chat.postMessage({ channel: event.channel, text: message });
+  }
 });
 
 (async () => {
