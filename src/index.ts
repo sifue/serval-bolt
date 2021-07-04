@@ -6,7 +6,7 @@ import {
 } from '@slack/bolt';
 
 const app = new App({
-  logLevel: LogLevel.DEBUG,
+  logLevel: LogLevel.INFO, // もしデバッグするときには DEBUG に変更
   socketMode: true,
   token: process.env.SLACK_BOT_TOKEN,
   appToken: process.env.SLACK_APP_TOKEN,
@@ -43,7 +43,7 @@ app.event('reaction_added', async ({ event, client }) => {
   const eventTs = event.event_ts;
 
   if (event.reaction !== '+1') return; // いいね以外を除外
-  // if (itemUserId === reactionUserId) return; // セルフいいねを除外 // TODO 戻す
+  if (itemUserId === reactionUserId) return; // セルフいいねを除外
 
   // Goodreactionsへの保存
   await prisma.goodreactions.create({
@@ -71,6 +71,14 @@ app.event('reaction_added', async ({ event, client }) => {
     await prisma.goodcounts.create({ data: { userId: itemUserId, goodcount } });
   }
 
+  // 記念メッセージ
+  if (goodcount === 10 || goodcount === 50 || goodcount % 100 === 0) {
+    await client.chat.postMessage({
+      channel: i.channel,
+      text: `<@${itemUserId}>ちゃん、すごーい！記念すべき ${goodcount} 回目のいいねだよ！おめでとー！`,
+    });
+  }
+
   console.log(
     `[INFO] Add Goodreaction goodcount: ${goodcount} itemUserId: ${itemUserId} reactionUserId: ${reactionUserId} eventTs: ${eventTs}`
   );
@@ -87,7 +95,7 @@ app.event('reaction_removed', async ({ event, client }) => {
   const eventTs = event.event_ts;
 
   if (event.reaction !== '+1') return; // いいね以外を除外
-  // if (itemUserId === reactionUserId) return; // セルフいいねを除外 // TODO 戻す
+  if (itemUserId === reactionUserId) return; // セルフいいねを除外
 
   // Goodreactionsの削除
   await prisma.goodreactions.deleteMany({
