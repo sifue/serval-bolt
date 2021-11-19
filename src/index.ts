@@ -42,8 +42,8 @@ app.message('いいねの統計教えて', async ({ message, say }) => {
   const userMap = new Map<string, number>();
   const channelMap = new Map<string, number>();
   records.forEach((r) => {
-    let userCount = userMap.get(r.itemUserId) || 0;
-    userMap.set(r.itemUserId, userCount + 1);
+    let userCount = userMap.get(r.reactionUserId) || 0;
+    userMap.set(r.reactionUserId, userCount + 1);
 
     let channelCount = channelMap.get(r.itemChannel) || 0;
     channelMap.set(r.itemChannel, channelCount + 1);
