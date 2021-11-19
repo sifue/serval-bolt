@@ -57,18 +57,17 @@ app.message('いいねの統計教えて', async ({ message, say }) => {
     return b[1] - a[1];
   });
 
-  let text = 'ここ最近の統計だけど';
-  text += `@${m.user}>ちゃんの統計を取ったいいねは ${records.length} こで、 \n`;
-  text += `■いいねしてくれた人 \n`;
+  let text = '';
+  text += `<@${m.user}>ちゃんの統計を取ったいいねは ${records.length} こで、\n`;
+  text += `:smiley:いいねしてくれた人(${users.length}名):smiley: \n`;
   users.forEach((u) => {
     text += `<@${u[0]}> ${u[1]}回\n`;
   });
-  text += `■いいねされたチャンネル \n`;
+  text += `:star:いいねされたチャンネル(${channels.length}個):star:  \n`;
   channels.forEach((c) => {
     text += `<#${c[0]}> ${c[1]}回\n`;
   });
-  text += 'こんなふうになってるよ。';
-
+  text += 'こんなふうになってるよ〜。';
   await say(text);
 });
 
