@@ -32,6 +32,46 @@ app.message('いいねいくつ', async ({ message, say }) => {
   await say(`<@${m.user}>ちゃんのいいねは ${goodcount} こだよ！`);
 });
 
+// いいねの統計教えて
+app.message('いいねの統計教えて', async ({ message, say }) => {
+  const m = message as GenericMessageEvent;
+  const records = await prisma.goodreactions.findMany({
+    where: { itemUserId: m.user },
+  });
+
+  const userMap = new Map<string, number>();
+  const channelMap = new Map<string, number>();
+  records.forEach((r) => {
+    let userCount = userMap.get(r.itemUserId) || 0;
+    userMap.set(r.itemUserId, userCount + 1);
+
+    let channelCount = channelMap.get(r.itemChannel) || 0;
+    channelMap.set(r.itemChannel, channelCount + 1);
+  });
+
+  const users = Array.from(userMap).sort((a, b) => {
+    return b[1] - a[1];
+  });
+
+  const channels = Array.from(channelMap).sort((a, b) => {
+    return b[1] - a[1];
+  });
+
+  let text = 'ここ最近の統計だけど';
+  text += `@${m.user}>ちゃんの統計を取ったいいねは ${records.length} こで、 \n`;
+  text += `■いいねしてくれた人 \n`;
+  users.forEach((u) => {
+    text += `<@${u[0]}> ${u[1]}回\n`;
+  });
+  text += `■いいねされたチャンネル \n`;
+  channels.forEach((c) => {
+    text += `<#${c[0]}> ${c[1]}回\n`;
+  });
+  text += 'こんなふうになってるよ。';
+
+  await say(text);
+});
+
 // リアクション追加に対する対応
 app.event('reaction_added', async ({ event, client }) => {
   const i = event.item as ReactionMessageItem;
