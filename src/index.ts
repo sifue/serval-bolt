@@ -59,11 +59,11 @@ app.message('いいねの統計教えて', async ({ message, say }) => {
 
   let text = '';
   text += `<@${m.user}>ちゃんの統計を取ったいいねは ${records.length} こで、\n`;
-  text += `\n:smiley:いいねしてくれた人 (${users.length}名):smiley: \n`;
+  text += `\n:smiley:*いいねしてくれた人 (${users.length}名)*:smiley: \n`;
   users.forEach((u) => {
     text += `<@${u[0]}> ${u[1]}回\n`;
   });
-  text += `\n:star:いいねされたチャンネル (${channels.length}個):star: \n`;
+  text += `\n:star:*いいねされたチャンネル (${channels.length}個)*:star: \n`;
   channels.forEach((c) => {
     text += `<#${c[0]}> ${c[1]}回\n`;
   });
