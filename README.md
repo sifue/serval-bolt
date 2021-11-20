@@ -75,7 +75,10 @@ env SLACK_BOT_TOKEN="xoxb-0000000000000000000-000000000000000000" SLACK_APP_TOKE
 - channels:read
 - chat:write
 - commands
+- groups:history
 - groups:read
+- im:history
+- mpim:history
 - reactions:read
 
 # Bolt のリファレンス
