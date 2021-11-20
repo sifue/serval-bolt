@@ -61,6 +61,9 @@ env SLACK_BOT_TOKEN="xoxb-0000000000000000000-000000000000000000" SLACK_APP_TOKE
 ## Event Subscription の設定
 
 - message.channels
+- message.groups
+- message.im
+- message.mpim
 - reaction_added (いいねのカウント機能)
 - reaction_removed (いいねカウントの削除機能)
 - member_joined_channel (入室メッセージ機能)
