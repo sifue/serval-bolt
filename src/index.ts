@@ -17,13 +17,13 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 // 動作確認用 ping コマンド
-app.message('ping serval-bolt', async ({ message, say }) => {
+app.message(/^ping serval-bolt/, async ({ message, say }) => {
   const m = message as GenericMessageEvent;
   await say(`pong <@${m.user}>`);
 });
 
 // いいねいくつ
-app.message('いいねいくつ', async ({ message, say }) => {
+app.message(/^いいねいくつ/, async ({ message, say }) => {
   const m = message as GenericMessageEvent;
   const record = await prisma.goodcounts.findUnique({
     where: { userId: m.user },
@@ -33,7 +33,7 @@ app.message('いいねいくつ', async ({ message, say }) => {
 });
 
 // いいねの統計教えて
-app.message('いいねの統計教えて', async ({ message, say }) => {
+app.message(/^いいねの統計教えて/, async ({ message, say }) => {
   const m = message as GenericMessageEvent;
   const records = await prisma.goodreactions.findMany({
     where: { itemUserId: m.user },
@@ -68,7 +68,13 @@ app.message('いいねの統計教えて', async ({ message, say }) => {
     text += `<#${c[0]}> ${c[1]}回\n`;
   });
   text += '\nこんなふうになってるよ〜。';
-  await say(text);
+
+  // 自分だけに見えるチャットとして投稿
+  await app.client.chat.postEphemeral({
+    channel: message.channel,
+    text,
+    user: m.user,
+  });
 });
 
 // リアクション追加に対する対応
