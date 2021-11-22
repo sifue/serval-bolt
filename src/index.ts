@@ -75,6 +75,7 @@ app.message(/^いいねの統計教えて/, async ({ message, say }) => {
     text,
     user: m.user,
   });
+  await say(`<@${m.user}>ちゃんにだけに表示されるメッセージで送ったよ〜。`);
 });
 
 // リアクション追加に対する対応
