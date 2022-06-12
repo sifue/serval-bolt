@@ -16,6 +16,10 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+function nowStr(): String {
+  return new Date().toISOString();
+}
+
 // 動作確認用 ping コマンド
 app.message(/^ping serval-bolt/, async ({ message, say }) => {
   const m = message as GenericMessageEvent;
@@ -90,6 +94,7 @@ app.event('reaction_added', async ({ event, client }) => {
 
   if (event.reaction.indexOf('+1') == -1) return; // いいね以外を除外
   if (itemUserId === reactionUserId) return; // セルフいいねを除外
+  if (!itemUserId) return; // itemUserIdが空であるパターンを除外
 
   // Goodreactionsへの保存
   await prisma.goodreactions.create({
@@ -126,7 +131,7 @@ app.event('reaction_added', async ({ event, client }) => {
   }
 
   console.log(
-    `[INFO] Add Goodreaction goodcount: ${goodcount} itemUserId: ${itemUserId} reactionUserId: ${reactionUserId} eventTs: ${eventTs}`
+    `[${nowStr()}][INFO] Add Goodreaction goodcount: ${goodcount} itemUserId: ${itemUserId} reactionUserId: ${reactionUserId} eventTs: ${eventTs}`
   );
 });
 
@@ -169,7 +174,7 @@ app.event('reaction_removed', async ({ event, client }) => {
   }
 
   console.log(
-    `[INFO] Remove Goodreaction goodcount: ${goodcount} itemUserId: ${itemUserId} reactionUserId: ${reactionUserId} eventTs: ${eventTs}`
+    `[${nowStr()}][INFO] Remove Goodreaction goodcount: ${goodcount} itemUserId: ${itemUserId} reactionUserId: ${reactionUserId} eventTs: ${eventTs}`
   );
 });
 
@@ -191,9 +196,9 @@ function loadJoinMessages() {
     const data = fs.readFileSync(joinMessagesFileName, 'utf8');
     joinMessages = new Map(JSON.parse(data));
   } catch (e) {
-    console.log('[INFO] loadJoinMessages Error:');
+    console.log(`[${nowStr()}][INFO] loadJoinMessages Error:`);
     console.log(e);
-    console.log('[INFO] Use empty loadJoinMessages.');
+    console.log(`[${nowStr()}][INFO] Use empty loadJoinMessages.`);
   }
 }
 
@@ -241,7 +246,7 @@ app.event('member_joined_channel', async ({ event, client }) => {
 
 (async () => {
   await app.start();
-  console.log('[INFO] ⚡️ Bolt app started');
+  console.log(`[${nowStr()}][INFO] ⚡️ Bolt app started`);
 
   loadJoinMessages();
 })();
