@@ -1,0 +1,45 @@
+version: '3'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: serval-bolt-app
+    env_file:
+      - .env
+    tty: true
+    stdin_open: true
+    # expose:
+    #   - 3000
+    # ports:
+    #   - "3000:3000"
+    init: true
+    volumes:
+      - serval-bolt-node-modules:/home/node/serval-bolt/node_modules
+      - serval-bolt-dist:/home/node/serval-bolt/dist
+    networks:
+      - app-net
+    depends_on:
+      - db
+  db:
+    image: postgres:12.7
+    container_name: serval-bolt-db
+    expose:
+      - 5432
+    ports:
+      - "5432:5432"
+    volumes:
+      - serval-bolt-db-store:/var/lib/postgresql/data
+      - ./script:/docker-entrypoint-initdb.d
+    environment:
+      - POSTGRES_PASSWORD=passw0rd
+    networks:
+      - app-net
+volumes:
+  serval-bolt-db-store:
+  serval-bolt-node-modules:
+  serval-bolt-dist:
+networks:
+  app-net:
+    driver: bridge
