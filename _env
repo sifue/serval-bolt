@@ -7,5 +7,6 @@ SLACK_APP_TOKEN=xapp-1-xxxxxxx-xxxxxxx-xxxxxxx-xxxxxxx
 # Prisma supports the native connection string format for PostgreSQL, MySQL, SQL Server and SQLite.
 # See the documentation for all the connection string options: https://pris.ly/d/connection-strings
 
+NAME_SUFFIX=
 POSTGRES_PORT=5432
 DATABASE_URL="postgresql://postgres:passw0rd@serval-bolt-db:5432/serval_bolt?schema=public" 
