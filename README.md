@@ -120,13 +120,13 @@ docker compose rm -fsv app
 
 # DBのバックアップ (要PostgreSQL Clinet)
 ```
-pg_dump -h 127.0.0.1 -p 5432 -U postgres serval_bolt > serval_bolt_backup
+env PGPASSWORD=passw0rd pg_dump -h 127.0.0.1 -p 5432 -U postgres serval_bolt > serval_bolt_backup
 ```
 
 # DBのリストア  (要PostgreSQL Clinet)
 
 ```
-psql -h 127.0.0.1 -p 5432 -U postgres -f serval_bolt_backup serval_bolt
+env PGPASSWORD=passw0rd psql -h 127.0.0.1 -p 5432 -U postgres -f serval_bolt_backup serval_bolt
 ```
 
 
