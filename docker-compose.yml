@@ -16,6 +16,9 @@ services:
     #   - "3000:3000"
     init: true
     volumes:
+      # バインドマウント
+      - ./join_messages.json:/home/node/serval-bolt/join_messages.json
+      # 名前付きボリューム
       - serval-bolt-node-modules:/home/node/serval-bolt/node_modules
       - serval-bolt-dist:/home/node/serval-bolt/dist
     networks:
@@ -26,14 +29,16 @@ services:
     image: postgres:12.7
     container_name: serval-bolt-db
     expose:
-      - 5432
+      - ${POSTGRES_PORT}
     ports:
-      - "5432:5432"
+      - ${POSTGRES_PORT}:${POSTGRES_PORT}
     volumes:
+      # 名前付きボリューム
       - serval-bolt-db-store:/var/lib/postgresql/data
       - ./script:/docker-entrypoint-initdb.d
     environment:
       - POSTGRES_PASSWORD=passw0rd
+    command: -p ${POSTGRES_PORT}
     networks:
       - app-net
 volumes:
