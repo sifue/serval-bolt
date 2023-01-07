@@ -86,6 +86,8 @@ DATABASE_URL="postgresql://postgres:passw0rd@serval-bolt-db:5432/serval_bolt?sch
 docker compose up -d --build
 ```
 
+注意！ローカルで起動した際にはDockerの起動と競合してしまうので、Dockerでその後起動したい場合には `dist` と `node_modules` フォルダを削除してからビルドしなおすこと！
+
 # 起動確認
 ```
 docker compose ps
