@@ -110,6 +110,11 @@ docker compose exec app /bin/sh
 docker compose exec db /bin/sh
 ```
 
+# アプリだけ停止 (DBの更新のために利用)
+```
+docker compose rm -fsv app
+```
+
 # DBのバックアップ (要PostgreSQL Clinet)
 ```
 pg_dump -h 127.0.0.1 -p 5432 -U postgres serval_bolt > serval_bolt_backup
