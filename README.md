@@ -15,15 +15,16 @@
 - 「入室メッセージを見せて」のように発言すると、そのチャンネルの入室メッセージを表示する
 
 # 動作確認環境
-- docker + composeプラグイン(こちらを推奨)
 
-Dockerでの動作方法は以下に記載。もしくは
+- docker + compose プラグイン(開発環境としてはこちらを推奨)
+
+Docker での動作方法は以下に記載。もしくは
 
 - Node.js v14.17.2
 - TypeScript Version 4.3.5
 - PostgreSQL 12.7
 
-こちらでも実行可能必要なコマンドは `Dockerfile` などを見て構築方法を確認のこと。
+こちらでも実行可能必要なコマンドは `Dockerfile` などを見て構築方法を確認のこと。長期運用するならば Docker を利用しない方がパフォーマンスが安定している。
 
 # Slack アプリケーションの作成方法
 
@@ -53,10 +54,9 @@ Dockerでの動作方法は以下に記載。もしくは
 - mpim:history
 - reactions:read
 
+# Docker での実行環境 の設定
 
-# 実行環境 の設定
-
-`.env` ファイルに以下を記載、作製したSlackのトークンとPostgreSQLのポートなどのプロパティを設定。`_env`ファイルをコピーして作成。
+`.env` ファイルに以下を記載、作製した Slack のトークンと PostgreSQL のポートなどのプロパティを設定。`_env`ファイルをコピーして作成。
 
 ```
 SLACK_BOT_TOKEN=xoxb-xxxxxxx-xxxxxxx-xxxxxxx-xxxxxxx
@@ -70,7 +70,7 @@ SLACK_APP_TOKEN=xapp-1-xxxxxxx-xxxxxxx-xxxxxxx-xxxxxxx
 
 NAME_SUFFIX=
 POSTGRES_PORT=5432
-DATABASE_URL="postgresql://postgres:passw0rd@serval-bolt-db:5432/serval_bolt?schema=public" 
+DATABASE_URL="postgresql://postgres:passw0rd@serval-bolt-db:5432/serval_bolt?schema=public"
 ```
 
 `join_messages.json` ファイルを用意。このファイルは入室メッセージを永続化する。
@@ -79,56 +79,97 @@ DATABASE_URL="postgresql://postgres:passw0rd@serval-bolt-db:5432/serval_bolt?sch
 []
 ```
 
-中身は空配列の文字列だけでOK。
+中身は空配列の文字列だけで OK。
 
-# 起動
+## 起動
+
 ```
 docker compose up -d --build
 ```
 
-注意！ローカルで起動した際にはDockerの起動と競合してしまうので、Dockerでその後起動したい場合には `dist` と `node_modules` フォルダを削除してからビルドしなおすこと！
+注意！ローカルで起動した際には Docker の起動と競合してしまうので、Docker でその後起動したい場合には `dist` と `node_modules` フォルダを削除してからビルドしなおすこと！
 
-# 起動確認
+## 起動確認
+
 ```
 docker compose ps
 ```
 
-# ログ確認
+## ログ確認
+
 ```
 docker compose logs
 ```
 
-# 終了
+## 終了
+
 ```
 docker compose down
 ```
 
-# アプリ側のLinuxの動作確認
+## アプリ側の Linux の動作確認
+
 ```
 docker compose exec app /bin/sh
 ```
 
-# DB側のLinuxの動作確認
+## DB 側の Linux の動作確認
+
 ```
 docker compose exec db /bin/sh
 ```
 
-# アプリだけ停止 (DBの更新のために利用)
+## アプリだけ停止 (DB の更新のために利用)
+
 ```
 docker compose rm -fsv app
 ```
 
-# DBのバックアップ (要PostgreSQL Clinet)
+## DB のバックアップ (要 PostgreSQL Clinet)
+
 ```
 env PGPASSWORD=passw0rd pg_dump -h 127.0.0.1 -p 5432 -U postgres serval_bolt > serval_bolt_backup
 ```
 
-# DBのリストア  (要PostgreSQL Clinet)
+## DB のリストア (要 PostgreSQL Clinet)
 
 ```
 env PGPASSWORD=passw0rd psql -h 127.0.0.1 -p 5432 -U postgres -f serval_bolt_backup serval_bolt
 ```
 
+# Node.js と PostgreSQL での実行環境の設定
+
+`.env` ファイルに以下を記載、作製した Slack のトークンと PostgreSQL のポートなどのプロパティを設定。`_env`ファイルをコピーして作成。
+
+```
+# Environment variables declared in this file are automatically made available to Prisma.
+# See the documentation for more detail: https://pris.ly/d/prisma-schema#using-environment-variables
+
+# Prisma supports the native connection string format for PostgreSQL, MySQL, SQL Server and SQLite.
+# See the documentation for all the connection string options: https://pris.ly/d/connection-strings
+
+DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:5432/serval_bolt?schema=public"
+```
+
+`join_messages.json` ファイルを用意。このファイルは入室メッセージを永続化する。
+
+```
+[]
+```
+
+中身は空配列の文字列だけで OK。
+
+## 起動
+
+```
+npm i
+npx prisma generate
+npx run build
+npx prisma db push
+env SLACK_BOT_TOKEN=xoxb-xxxx-xxxxx SLACK_APP_TOKEN=xapp-1-xxxxxx-xxxxx node dist/index.js
+```
+
+Slack のトークンは起動引数に入れて実行。長期運用する際には[forever](https://www.npmjs.com/package/forever)などを使ってプロセスが自動的に再起動、したりログ収集したりするようにすると良い。
 
 # 参考: Bolt のリファレンス
 
