@@ -33,7 +33,10 @@ app.message(/^いいねいくつ/, async ({ message, say }) => {
     where: { userId: m.user },
   });
   const goodcount = record ? record.goodcount : 0;
-  await say(`<@${m.user}>ちゃんのいいねは ${goodcount} こだよ！`);
+  await say({
+    text: `<@${m.user}>ちゃんのいいねは ${goodcount} こだよ！`,
+    thread_ts: (message.subtype === undefined && message.thread_ts !== undefined) ? message.thread_ts : undefined
+  });
 });
 
 // いいねの統計教えて
@@ -178,10 +181,12 @@ app.event('reaction_removed', async ({ event, client }) => {
   );
 });
 
-// 入室メッセージ機能
+// 入退出メッセージ機能
 import * as fs from 'fs';
 const joinMessagesFileName = './join_messages.json';
+const leftMessagesFileName = './left_messages.json';
 let joinMessages = new Map(); // key: チャンネルID, value: 入室メッセージ
+let leftMessages = new Map(); // key: チャンネルID, value: 退出メッセージ
 
 function saveJoinMessages() {
   fs.writeFileSync(
@@ -191,7 +196,15 @@ function saveJoinMessages() {
   );
 }
 
-function loadJoinMessages() {
+function saveLeftMessages() {
+  fs.writeFileSync(
+    leftMessagesFileName,
+    JSON.stringify(Array.from(leftMessages)),
+    'utf8'
+  );
+}
+
+function loadChannelEventMessages() {
   try {
     const data = fs.readFileSync(joinMessagesFileName, 'utf8');
     joinMessages = new Map(JSON.parse(data));
@@ -199,6 +212,14 @@ function loadJoinMessages() {
     console.log(`[${nowStr()}][INFO] loadJoinMessages Error:`);
     console.log(e);
     console.log(`[${nowStr()}][INFO] Use empty loadJoinMessages.`);
+  }
+  try {
+    const data = fs.readFileSync(leftMessagesFileName, 'utf8');
+    leftMessages = new Map(JSON.parse(data));
+  } catch (e) {
+    console.log(`[${nowStr()}][INFO] loadLeftMessages Error:`);
+    console.log(e);
+    console.log(`[${nowStr()}][INFO] Use empty loadLeftMessages.`);
   }
 }
 
@@ -232,9 +253,51 @@ app.message(/^入室メッセージを見せて/i, async ({ message, say }) => {
   }
 });
 
+// 発言したチャンネルに入室メッセージを設定する
+app.message(/^退出メッセージを登録して (.*)/i, async ({ message, say }) => {
+  const m = message as GenericMessageEvent;
+  const parsed = m.text?.match(/^退出メッセージを登録して (.*)/);
+  if (parsed) {
+    const leftMessage = parsed[1];
+    leftMessages.set(m.channel, leftMessage);
+    saveLeftMessages();
+    await say(`退出メッセージ:「${leftMessage}」を登録したよ。`);
+  }
+});
+
+// 発言したチャンネルの入室メッセージの設定を解除する
+app.message(/^退出メッセージを消して/i, async ({ message, say }) => {
+  const m = message as GenericMessageEvent;
+  leftMessages.delete(m.channel);
+  saveLeftMessages();
+  await say(`退出メッセージを削除したよ。`);
+});
+
+// 発言したチャンネルの入室メッセージの設定を確認する
+app.message(/^退出メッセージを見せて/i, async ({ message, say }) => {
+  const m = message as GenericMessageEvent;
+  const value = leftMessages.get(m.channel);
+  if (value) {
+    const message = value.replace(/\\n/g, '\n');
+    await say(`現在登録されている退出メッセージは\n\n${message}\n\nだよ。`);
+  }
+});
+
 // 部屋に入ったユーザーへの入室メッセージを案内 %USERNAME% はユーザー名に、%ROOMNAME% は部屋名に、\\n は改行コード(\n)に置換
 app.event('member_joined_channel', async ({ event, client }) => {
   const value = joinMessages.get(event.channel);
+  if (value) {
+    const message = value
+      .replace('%USERNAME%', `<@${event.user}>`)
+      .replace('%ROOMNAME%', `<#${event.channel}>`)
+      .replace(/\\n/g, '\n');
+    await client.chat.postMessage({ channel: event.channel, text: message });
+  }
+});
+
+// 部屋から退出したユーザーの退出メッセージを案内 %USERNAME% はユーザー名に、%ROOMNAME% は部屋名に、\\n は改行コード(\n)に置換
+app.event('member_left_channel', async ({ event, client }) => {
+  const value = leftMessages.get(event.channel);
   if (value) {
     const message = value
       .replace('%USERNAME%', `<@${event.user}>`)
@@ -248,5 +311,5 @@ app.event('member_joined_channel', async ({ event, client }) => {
   await app.start();
   console.log(`[${nowStr()}][INFO] ⚡️ Bolt app started`);
 
-  loadJoinMessages();
+  loadChannelEventMessages();
 })();
