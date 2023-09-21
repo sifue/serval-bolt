@@ -13,6 +13,10 @@
   入室メッセージの %USERNAME% は表示名またはユーザー名に、 %ROOMNAME% は #programming のようなチャンネル名に置換される。
 - 「入室メッセージを消して」のように発言すると、そのチャンネルの入室メッセージを解除する
 - 「入室メッセージを見せて」のように発言すると、そのチャンネルの入室メッセージを表示する
+- 「退出メッセージを登録して %USERNAME%さんが%ROOMNAME%から退出しました。」のように発言すると「%USERNAME%さんが%ROOMNAME%から退出しました。」をそのチャンネルの退出メッセージとして登録する。改行するには「\n」を改行したい場所に差し込む。
+  退出メッセージの %USERNAME% は表示名またはユーザー名に、 %ROOMNAME% は #programming のようなチャンネル名に置換される。
+- 「退出メッセージを消して」のように発言すると、そのチャンネルの退出メッセージを解除する
+- 「退出メッセージを見せて」のように発言すると、そのチャンネルの退出メッセージを表示する
 
 # 動作確認環境
 
@@ -40,7 +44,7 @@ Docker での動作方法は以下に記載。もしくは
 - reaction_added (いいねのカウント機能)
 - reaction_removed (いいねカウントの削除機能)
 - member_joined_channel (入室メッセージ機能)
-- member_left_channel (退出メッセージ機能の予定)
+- member_left_channel (退出メッセージ機能)
 
 ## Bot Token Scope の設定
 
@@ -73,7 +77,7 @@ POSTGRES_PORT=5432
 DATABASE_URL="postgresql://postgres:passw0rd@serval-bolt-db:5432/serval_bolt?schema=public"
 ```
 
-`join_messages.json` ファイルを用意。このファイルは入室メッセージを永続化する。
+`join_messages.json` ファイルと`left_messages.json` ファイルを用意。このファイルは入室メッセージと退出メッセージを永続化する。
 
 ```
 []
