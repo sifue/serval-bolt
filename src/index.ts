@@ -81,8 +81,12 @@ app.message(/^いいねの統計教えて/, async ({ message, say }) => {
     channel: message.channel,
     text,
     user: m.user,
+    thread_ts: (message.subtype === undefined && message.thread_ts !== undefined) ? message.thread_ts : undefined,
   });
-  await say(`<@${m.user}>ちゃんにだけ表示されるメッセージで送ったよ〜。`);
+  await say({
+    text: `<@${m.user}>ちゃんにだけ表示されるメッセージで送ったよ〜。`,
+    thread_ts: (message.subtype === undefined && message.thread_ts !== undefined) ? message.thread_ts : undefined,
+  });
 });
 
 // リアクション追加に対する対応
@@ -224,62 +228,74 @@ function loadChannelEventMessages() {
 }
 
 // 発言したチャンネルに入室メッセージを設定する
-app.message(/^入室メッセージを登録して (.*)/i, async ({ message, say }) => {
+app.message(/^(参加|入室)メッセージを登録して (.*)/i, async ({ message, say }) => {
   const m = message as GenericMessageEvent;
-  const parsed = m.text?.match(/^入室メッセージを登録して (.*)/);
-  if (parsed) {
-    const joinMessage = parsed[1];
+  const parsed = m.text!.split(/^(参加|入室)メッセージを登録して /);
+  if (parsed.length === 3) {
+    const joinMessage = parsed[2].replace("\n","\\n");
     joinMessages.set(m.channel, joinMessage);
     saveJoinMessages();
-    await say(`入室メッセージ:「${joinMessage}」を登録したよ。`);
+    await say(`入室メッセージを登録したよ。\n登録された入室メッセージ:\n\n${joinMessage.replace("\\n","\n")}`);
   }
 });
 
 // 発言したチャンネルの入室メッセージの設定を解除する
-app.message(/^入室メッセージを消して/i, async ({ message, say }) => {
+app.message(/^(参加|入室)メッセージを消して/i, async ({ message, say }) => {
   const m = message as GenericMessageEvent;
-  joinMessages.delete(m.channel);
-  saveJoinMessages();
-  await say(`入室メッセージを削除したよ。`);
+  if (joinMessages.has(m.channel)) {
+    joinMessages.delete(m.channel);
+    saveJoinMessages();
+    await say(`入室メッセージを削除したよ。`);
+  } else {
+    await say(`入室メッセージが登録されてないよ。`);
+  }
 });
 
 // 発言したチャンネルの入室メッセージの設定を確認する
-app.message(/^入室メッセージを見せて/i, async ({ message, say }) => {
+app.message(/^(参加|入室)メッセージを見せて/i, async ({ message, say }) => {
   const m = message as GenericMessageEvent;
   const value = joinMessages.get(m.channel);
   if (value) {
     const message = value.replace(/\\n/g, '\n');
     await say(`現在登録されている入室メッセージは\n\n${message}\n\nだよ。`);
+  } else {
+    await say(`入室メッセージが登録されてないよ。`);
   }
 });
 
 // 発言したチャンネルに入室メッセージを設定する
-app.message(/^退出メッセージを登録して (.*)/i, async ({ message, say }) => {
+app.message(/^(退出|退室)メッセージを登録して (.*)/i, async ({ message, say }) => {
   const m = message as GenericMessageEvent;
-  const parsed = m.text?.match(/^退出メッセージを登録して (.*)/);
-  if (parsed) {
-    const leftMessage = parsed[1];
+  const parsed = m.text!.split(/^(退出|退室)メッセージを登録して /);
+  if (parsed.length === 3) {
+    const leftMessage = parsed[2].replace("\n","\\n");
     leftMessages.set(m.channel, leftMessage);
     saveLeftMessages();
-    await say(`退出メッセージ:「${leftMessage}」を登録したよ。`);
+    await say(`退出メッセージを登録したよ。\n登録された退出メッセージ:\n\n${leftMessage.replace("\\n","\n")}`);
   }
 });
 
 // 発言したチャンネルの入室メッセージの設定を解除する
-app.message(/^退出メッセージを消して/i, async ({ message, say }) => {
+app.message(/^(退出|退室)メッセージを消して/i, async ({ message, say }) => {
   const m = message as GenericMessageEvent;
-  leftMessages.delete(m.channel);
-  saveLeftMessages();
-  await say(`退出メッセージを削除したよ。`);
+  if (leftMessages.has(m.channel)) {
+    leftMessages.delete(m.channel);
+    saveLeftMessages();
+    await say(`退出メッセージを削除したよ。`);
+  } else {
+    await say(`退出メッセージが登録されてないよ。`);
+  }
 });
 
 // 発言したチャンネルの入室メッセージの設定を確認する
-app.message(/^退出メッセージを見せて/i, async ({ message, say }) => {
+app.message(/^(退出|退室)メッセージを見せて/i, async ({ message, say }) => {
   const m = message as GenericMessageEvent;
   const value = leftMessages.get(m.channel);
   if (value) {
     const message = value.replace(/\\n/g, '\n');
     await say(`現在登録されている退出メッセージは\n\n${message}\n\nだよ。`);
+  } else {
+    await say(`退出メッセージが登録されてないよ。`);
   }
 });
 
