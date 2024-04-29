@@ -304,8 +304,8 @@ app.event('member_joined_channel', async ({ event, client }) => {
   const value = joinMessages.get(event.channel);
   if (value) {
     const message = value
-      .replace('%USERNAME%', `<@${event.user}>`)
-      .replace('%ROOMNAME%', `<#${event.channel}>`)
+      .replaceAll('%USERNAME%', `<@${event.user}>`)
+      .replaceAll('%ROOMNAME%', `<#${event.channel}>`)
       .replace(/\\n/g, '\n');
     await client.chat.postMessage({ channel: event.channel, text: message });
   }
@@ -316,8 +316,8 @@ app.event('member_left_channel', async ({ event, client }) => {
   const value = leftMessages.get(event.channel);
   if (value) {
     const message = value
-      .replace('%USERNAME%', `<@${event.user}>`)
-      .replace('%ROOMNAME%', `<#${event.channel}>`)
+      .replaceAll('%USERNAME%', `<@${event.user}>`)
+      .replaceAll('%ROOMNAME%', `<#${event.channel}>`)
       .replace(/\\n/g, '\n');
     await client.chat.postMessage({ channel: event.channel, text: message });
   }
