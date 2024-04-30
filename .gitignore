@@ -2,3 +2,4 @@ node_modules
 dist
 .env
 join_messages.json
+left_messages.json
