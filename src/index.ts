@@ -35,7 +35,10 @@ app.message(/^いいねいくつ/, async ({ message, say }) => {
   const goodcount = record ? record.goodcount : 0;
   await say({
     text: `<@${m.user}>ちゃんのいいねは ${goodcount} こだよ！`,
-    thread_ts: (message.subtype === undefined && message.thread_ts !== undefined) ? message.thread_ts : undefined
+    thread_ts:
+      message.subtype === undefined && message.thread_ts !== undefined
+        ? message.thread_ts
+        : undefined,
   });
 });
 
@@ -48,7 +51,7 @@ app.message(/^いいねの統計教えて/, async ({ message, say }) => {
 
   const userMap = new Map<string, number>();
   const channelMap = new Map<string, number>();
-  records.forEach((r: { reactionUserId: any; itemChannel: any; }) => {
+  records.forEach((r: { reactionUserId: any; itemChannel: any }) => {
     let userCount = userMap.get(r.reactionUserId) || 0;
     userMap.set(r.reactionUserId, userCount + 1);
 
@@ -81,11 +84,17 @@ app.message(/^いいねの統計教えて/, async ({ message, say }) => {
     channel: message.channel,
     text,
     user: m.user,
-    thread_ts: (message.subtype === undefined && message.thread_ts !== undefined) ? message.thread_ts : undefined,
+    thread_ts:
+      message.subtype === undefined && message.thread_ts !== undefined
+        ? message.thread_ts
+        : undefined,
   });
   await say({
     text: `<@${m.user}>ちゃんにだけ表示されるメッセージで送ったよ〜。`,
-    thread_ts: (message.subtype === undefined && message.thread_ts !== undefined) ? message.thread_ts : undefined,
+    thread_ts:
+      message.subtype === undefined && message.thread_ts !== undefined
+        ? message.thread_ts
+        : undefined,
   });
 });
 
@@ -228,16 +237,24 @@ function loadChannelEventMessages() {
 }
 
 // 発言したチャンネルに入室メッセージを設定する
-app.message(/^(参加|入室)メッセージを登録して (.*)/i, async ({ message, say }) => {
-  const m = message as GenericMessageEvent;
-  const parsed = m.text!.split(/^(参加|入室)メッセージを登録して /);
-  if (parsed.length === 3) {
-    const joinMessage = parsed[2].replace("\n","\\n");
-    joinMessages.set(m.channel, joinMessage);
-    saveJoinMessages();
-    await say(`入室メッセージを登録したよ。\n登録された入室メッセージ:\n\n${joinMessage.replace("\\n","\n")}`);
+app.message(
+  /^(参加|入室)メッセージを登録して (.*)/i,
+  async ({ message, say }) => {
+    const m = message as GenericMessageEvent;
+    const parsed = m.text!.split(/^(参加|入室)メッセージを登録して /);
+    if (parsed.length === 3) {
+      const joinMessage = parsed[2].replace('\n', '\\n');
+      joinMessages.set(m.channel, joinMessage);
+      saveJoinMessages();
+      await say(
+        `入室メッセージを登録したよ。\n登録された入室メッセージ:\n\n${joinMessage.replace(
+          '\\n',
+          '\n'
+        )}`
+      );
+    }
   }
-});
+);
 
 // 発言したチャンネルの入室メッセージの設定を解除する
 app.message(/^(参加|入室)メッセージを消して/i, async ({ message, say }) => {
@@ -264,16 +281,24 @@ app.message(/^(参加|入室)メッセージを見せて/i, async ({ message, sa
 });
 
 // 発言したチャンネルに入室メッセージを設定する
-app.message(/^(退出|退室)メッセージを登録して (.*)/i, async ({ message, say }) => {
-  const m = message as GenericMessageEvent;
-  const parsed = m.text!.split(/^(退出|退室)メッセージを登録して /);
-  if (parsed.length === 3) {
-    const leftMessage = parsed[2].replace("\n","\\n");
-    leftMessages.set(m.channel, leftMessage);
-    saveLeftMessages();
-    await say(`退出メッセージを登録したよ。\n登録された退出メッセージ:\n\n${leftMessage.replace("\\n","\n")}`);
+app.message(
+  /^(退出|退室)メッセージを登録して (.*)/i,
+  async ({ message, say }) => {
+    const m = message as GenericMessageEvent;
+    const parsed = m.text!.split(/^(退出|退室)メッセージを登録して /);
+    if (parsed.length === 3) {
+      const leftMessage = parsed[2].replace('\n', '\\n');
+      leftMessages.set(m.channel, leftMessage);
+      saveLeftMessages();
+      await say(
+        `退出メッセージを登録したよ。\n登録された退出メッセージ:\n\n${leftMessage.replace(
+          '\\n',
+          '\n'
+        )}`
+      );
+    }
   }
-});
+);
 
 // 発言したチャンネルの入室メッセージの設定を解除する
 app.message(/^(退出|退室)メッセージを消して/i, async ({ message, say }) => {
@@ -304,8 +329,8 @@ app.event('member_joined_channel', async ({ event, client }) => {
   const value = joinMessages.get(event.channel);
   if (value) {
     const message = value
-      .replaceAll('%USERNAME%', `<@${event.user}>`)
-      .replaceAll('%ROOMNAME%', `<#${event.channel}>`)
+      .replace(/%USERNAME%/g, `<@${event.user}>`)
+      .replace(/%ROOMNAME%/g, `<#${event.channel}>`)
       .replace(/\\n/g, '\n');
     await client.chat.postMessage({ channel: event.channel, text: message });
   }
@@ -316,8 +341,8 @@ app.event('member_left_channel', async ({ event, client }) => {
   const value = leftMessages.get(event.channel);
   if (value) {
     const message = value
-      .replaceAll('%USERNAME%', `<@${event.user}>`)
-      .replaceAll('%ROOMNAME%', `<#${event.channel}>`)
+      .replace(/%USERNAME%/g, `<@${event.user}>`)
+      .replace(/%ROOMNAME%/g, `<#${event.channel}>`)
       .replace(/\\n/g, '\n');
     await client.chat.postMessage({ channel: event.channel, text: message });
   }
