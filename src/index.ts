@@ -161,7 +161,7 @@ app.event('reaction_removed', async ({ event, client }) => {
   const itemTs = i.ts;
   const eventTs = event.event_ts;
 
-  if (event.reaction !== '+1') return; // いいね以外を除外
+  if (event.reaction.indexOf('+1') == -1) return; // いいね以外を除外
   if (itemUserId === reactionUserId) return; // セルフいいねを除外
 
   // Goodreactionsの削除
