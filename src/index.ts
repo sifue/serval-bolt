@@ -341,6 +341,7 @@ app.event('member_joined_channel', async ({ event, client }) => {
       // チャンネルの情報を取得
       const info = await client.conversations.info({
         channel: event.channel,
+        include_num_members: true,
       });
 
       // num_members から参加者数を取得
