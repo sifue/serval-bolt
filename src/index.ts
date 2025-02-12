@@ -324,18 +324,20 @@ app.message(/^(退出|退室)メッセージを見せて/i, async ({ message, sa
   }
 });
 
-/**
+/*
  * 部屋に入ったユーザーへの入室メッセージを案内
  * 以下の変数が使用可能:
  * - %USERNAME% : ユーザー名
  * - %ROOMNAME% : 部屋名
- * - %JOIN_NUMBER% : 参加者数
+ * - %JOINNUMBER% : 参加者数
  * - \\n : 改行コード(\n)
  */
 app.event('member_joined_channel', async ({ event, client }) => {
   const value = joinMessages.get(event.channel);
   if (value) {
-    try {
+    let message = value;
+
+    if (value.includes('%JOINNUMBER%')) {
       // チャンネルのメンバー一覧を取得
       const result = await client.conversations.members({
         channel: event.channel,
@@ -344,19 +346,18 @@ app.event('member_joined_channel', async ({ event, client }) => {
       // 新たに参加したユーザーも含めたメンバー数を取得
       const joinNumber = result.members?.length ?? 0;
 
-      const message = value
-        .replace(/%USERNAME%/g, `<@${event.user}>`)
-        .replace(/%ROOMNAME%/g, `<#${event.channel}>`)
-        .replace(/%JOIN_NUMBER%/g, joinNumber.toString())
-        .replace(/\\n/g, '\n');
-      await client.chat.postMessage({ channel: event.channel, text: message });
-    } catch (e) {
-      console.error(e);
+      message = message.replace(/%JOINNUMBER%/g, joinNumber.toString());
     }
+
+    message = message
+      .replace(/%USERNAME%/g, `<@${event.user}>`)
+      .replace(/%ROOMNAME%/g, `<#${event.channel}>`)
+      .replace(/\\n/g, '\n');
+    await client.chat.postMessage({ channel: event.channel, text: message });
   }
 });
 
-/**
+/*
  * 部屋から退出したユーザーへの退出メッセージを案内
  * 以下の変数が使用可能:
  * - %USERNAME% : ユーザー名
