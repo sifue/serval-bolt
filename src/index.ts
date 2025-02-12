@@ -338,13 +338,27 @@ app.event('member_joined_channel', async ({ event, client }) => {
     let message = value;
 
     if (value.includes('%JOINNUMBER%')) {
-      // チャンネルのメンバー一覧を取得
-      const result = await client.conversations.members({
-        channel: event.channel,
-      });
+      let members: string[] = [];
+      let cursor: string | undefined;
 
-      // 新たに参加したユーザーも含めたメンバー数を取得
-      const joinNumber = result.members?.length ?? 0;
+      do {
+        // チャンネルのメンバー一覧を取得
+        const result = await client.conversations.members({
+          channel: event.channel,
+          cursor: cursor,
+        });
+
+        // メンバーリストを追加
+        if (result.members) {
+          members = members.concat(result.members);
+        }
+
+        // 次のページがあれば cursor を更新
+        cursor = result.response_metadata?.next_cursor;
+      } while (cursor);
+
+      // 全メンバー数を取得
+      const joinNumber = members.length;
 
       message = message.replace(/%JOINNUMBER%/g, joinNumber.toString());
     }
