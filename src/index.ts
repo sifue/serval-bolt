@@ -324,7 +324,14 @@ app.message(/^(退出|退室)メッセージを見せて/i, async ({ message, sa
   }
 });
 
-// 部屋に入ったユーザーへの入室メッセージを案内 %USERNAME% はユーザー名に、%ROOMNAME% は部屋名に、\\n は改行コード(\n)に置換
+/**
+ * 部屋に入ったユーザーへの入室メッセージを案内
+ * 以下の変数が使用可能:
+ * - %USERNAME% : ユーザー名
+ * - %ROOMNAME% : 部屋名
+ * - %JOIN_NUMBER% : 参加者数
+ * - \\n : 改行コード(\n)
+ */
 app.event('member_joined_channel', async ({ event, client }) => {
   const value = joinMessages.get(event.channel);
   if (value) {
@@ -349,7 +356,13 @@ app.event('member_joined_channel', async ({ event, client }) => {
   }
 });
 
-// 部屋から退出したユーザーの退出メッセージを案内 %USERNAME% はユーザー名に、%ROOMNAME% は部屋名に、\\n は改行コード(\n)に置換
+/**
+ * 部屋から退出したユーザーへの退出メッセージを案内
+ * 以下の変数が使用可能:
+ * - %USERNAME% : ユーザー名
+ * - %ROOMNAME% : 部屋名
+ * - \\n : 改行コード(\n)
+ */
 app.event('member_left_channel', async ({ event, client }) => {
   const value = leftMessages.get(event.channel);
   if (value) {
