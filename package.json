@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@prisma/client": "^2.30.3",
-    "@slack/bolt": "^3.18.0"
+    "@slack/bolt": "^3.18.0",
+    "@slack/types": "^2.14.0"
   }
 }
