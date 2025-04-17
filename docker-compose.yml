@@ -5,6 +5,8 @@ services:
     build:
       context: .
       dockerfile: ./Dockerfile
+      platforms:
+        - linux/amd64
     container_name: serval-bolt-app${NAME_SUFFIX}
     env_file:
       - .env
