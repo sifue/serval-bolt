@@ -1,9 +1,9 @@
-import {
-  App,
-  LogLevel,
-  GenericMessageEvent,
-  ReactionMessageItem,
-} from '@slack/bolt';
+import { App, LogLevel, GenericMessageEvent } from '@slack/bolt';
+interface ReactionMessageItem {
+  type: 'message';
+  channel: string;
+  ts: string;
+}
 
 const app = new App({
   logLevel: LogLevel.INFO, // デバッグするときには DEBUG に変更
@@ -147,7 +147,7 @@ app.event('reaction_added', async ({ event, client }) => {
   }
 
   console.log(
-    `[${nowStr()}][INFO] Add Goodreaction goodcount: ${goodcount} itemUserId: ${itemUserId} reactionUserId: ${reactionUserId} eventTs: ${eventTs}`,
+    `[${nowStr()}][INFO] Add Goodreaction goodcount: ${goodcount} itemUserId: ${itemUserId} reactionUserId: ${reactionUserId} eventTs: ${eventTs}`
   );
 });
 
@@ -190,7 +190,7 @@ app.event('reaction_removed', async ({ event, client }) => {
   }
 
   console.log(
-    `[${nowStr()}][INFO] Remove Goodreaction goodcount: ${goodcount} itemUserId: ${itemUserId} reactionUserId: ${reactionUserId} eventTs: ${eventTs}`,
+    `[${nowStr()}][INFO] Remove Goodreaction goodcount: ${goodcount} itemUserId: ${itemUserId} reactionUserId: ${reactionUserId} eventTs: ${eventTs}`
   );
 });
 
@@ -205,7 +205,7 @@ function saveJoinMessages() {
   fs.writeFileSync(
     joinMessagesFileName,
     JSON.stringify(Array.from(joinMessages)),
-    'utf8',
+    'utf8'
   );
 }
 
@@ -213,7 +213,7 @@ function saveLeftMessages() {
   fs.writeFileSync(
     leftMessagesFileName,
     JSON.stringify(Array.from(leftMessages)),
-    'utf8',
+    'utf8'
   );
 }
 
@@ -249,11 +249,11 @@ app.message(
       await say(
         `入室メッセージを登録したよ。\n登録された入室メッセージ:\n\n${joinMessage.replace(
           '\\n',
-          '\n',
-        )}`,
+          '\n'
+        )}`
       );
     }
-  },
+  }
 );
 
 // 発言したチャンネルの入室メッセージの設定を解除する
@@ -293,11 +293,11 @@ app.message(
       await say(
         `退出メッセージを登録したよ。\n登録された退出メッセージ:\n\n${leftMessage.replace(
           '\\n',
-          '\n',
-        )}`,
+          '\n'
+        )}`
       );
     }
-  },
+  }
 );
 
 // 発言したチャンネルの入室メッセージの設定を解除する
