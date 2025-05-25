@@ -6,7 +6,7 @@ interface ReactionMessageItem {
 }
 
 const app = new App({
-  logLevel: LogLevel.DEBUG, // デバッグするときには DEBUG に変更
+  logLevel: LogLevel.INFO, // デバッグするときには DEBUG に変更
   socketMode: true,
   token: process.env.SLACK_BOT_TOKEN,
   appToken: process.env.SLACK_APP_TOKEN,
