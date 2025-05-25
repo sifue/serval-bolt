@@ -6,7 +6,7 @@ interface ReactionMessageItem {
 }
 
 const app = new App({
-  logLevel: LogLevel.INFO, // デバッグするときには DEBUG に変更
+  logLevel: LogLevel.DEBUG, // デバッグするときには DEBUG に変更
   socketMode: true,
   token: process.env.SLACK_BOT_TOKEN,
   appToken: process.env.SLACK_APP_TOKEN,
@@ -338,16 +338,23 @@ app.event('member_joined_channel', async ({ event, client }) => {
     let message = value;
 
     if (value.includes('%JOINNUMBER%')) {
-      // チャンネルの情報を取得
-      const info = await client.conversations.info({
+      // 参加者配列を取得
+      const membersRes = await client.conversations.members({
         channel: event.channel,
-        include_num_members: true,
       });
 
-      // num_members から参加者数を取得
-      const joinNumber = info.channel?.num_members || 0;
+      const memberIds = membersRes.members || [];
 
-      message = message.replace(/%JOINNUMBER%/g, joinNumber.toString());
+      // 人間をフィルター
+      let humanCount = 0;
+      for (const userId of memberIds) {
+        const userInfo = await client.users.info({ user: userId });
+        if (!userInfo.user?.is_bot) {
+          humanCount++;
+        }
+      }
+
+      message = message.replace(/%JOINNUMBER%/g, humanCount.toString());
     }
 
     message = message
