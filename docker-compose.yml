@@ -7,6 +7,7 @@ services:
       dockerfile: ./Dockerfile
       platforms:
         - linux/amd64
+      no_cache: true
     container_name: serval-bolt-app${NAME_SUFFIX}
     env_file:
       - .env
@@ -23,7 +24,6 @@ services:
       - ./left_messages.json:/home/node/serval-bolt/left_messages.json
       # 名前付きボリューム
       - serval-bolt-node-modules:/home/node/serval-bolt/node_modules
-      - serval-bolt-dist:/home/node/serval-bolt/dist
     networks:
       - app-net
     depends_on:
