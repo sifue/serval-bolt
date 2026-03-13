@@ -6,21 +6,26 @@
   "scripts": {
     "start": "node dist/index.js",
     "build": "node_modules/.bin/tsc",
-    "prepare": "husky install"
+    "prepare": "husky"
   },
   "author": "sifue",
   "license": "MIT",
   "devDependencies": {
-    "@types/node": "^16.18.97",
-    "husky": "^7.0.4",
-    "prettier": "^2.8.8",
-    "pretty-quick": "^3.3.1",
-    "prisma": "^2.30.3",
-    "typescript": "^4.9.5"
+    "@types/node": "^25.5.0",
+    "husky": "^9.1.7",
+    "prettier": "^3.8.1",
+    "pretty-quick": "^4.2.2",
+    "prisma": "^7.5.0",
+    "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@prisma/client": "^2.30.3",
-    "@slack/bolt": "^3.18.0",
-    "@slack/types": "^2.14.0"
+    "@prisma/client": "^7.5.0",
+    "@slack/bolt": "^4.6.0",
+    "@slack/types": "^2.20.1"
+  },
+  "overrides": {
+    "@hono/node-server": "^1.19.11",
+    "hono": "^4.12.7",
+    "lodash": "^4.17.23"
   }
 }
