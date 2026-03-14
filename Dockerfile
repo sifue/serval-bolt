@@ -1,7 +1,7 @@
 # 参考
 # https://nodejs.org/ja/docs/guides/nodejs-docker-webapp/
 # https://zenn.dev/dove/articles/d02f66cc0aa5c3
-FROM node:14.21.2-alpine3.16
+FROM node:25-alpine
 
 ENV LANG=ja_JP.UTF-8
 ENV HOME=/home/node
@@ -42,11 +42,10 @@ RUN echo "WORKDIR is $WORKDIR . HOME is $HOME . LANG is $LANG ." && npm config l
 RUN npm install
 
 # アプリケーションのソースをバンドルする
-COPY . .
+# USER node 以降でもビルドできるように所有者を明示する
+COPY --chown=node:node . .
 
 RUN npx prisma generate
-
-RUN npm run build
 
 # CMD ["sleep", "infinity"]
 CMD ["/bin/sh", "startup.sh"]

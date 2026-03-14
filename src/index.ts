@@ -1,8 +1,18 @@
-import { App, LogLevel, GenericMessageEvent } from '@slack/bolt';
+import { App, LogLevel } from '@slack/bolt';
+import type { Goodreactions } from './generated/prisma/client';
+
 interface ReactionMessageItem {
   type: 'message';
   channel: string;
   ts: string;
+}
+
+interface UserMessageEvent {
+  user: string;
+  channel: string;
+  text?: string;
+  subtype?: string;
+  thread_ts?: string;
 }
 
 const app = new App({
@@ -12,23 +22,19 @@ const app = new App({
   appToken: process.env.SLACK_APP_TOKEN,
 });
 
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
-
-function nowStr(): String {
+function nowStr(): string {
   return new Date().toISOString();
 }
 
 // 動作確認用 ping コマンド
 app.message(/^ping serval-bolt/, async ({ message, say }) => {
-  const m = message as GenericMessageEvent;
+  const m = message as UserMessageEvent;
   await say(`pong <@${m.user}>`);
 });
 
 // いいねいくつ
 app.message(/^いいねいくつ/, async ({ message, say }) => {
-  const m = message as GenericMessageEvent;
+  const m = message as UserMessageEvent;
   const record = await prisma.goodcounts.findUnique({
     where: { userId: m.user },
   });
@@ -44,14 +50,14 @@ app.message(/^いいねいくつ/, async ({ message, say }) => {
 
 // いいねの統計教えて
 app.message(/^いいねの統計教えて/, async ({ message, say }) => {
-  const m = message as GenericMessageEvent;
-  const records = await prisma.goodreactions.findMany({
+  const m = message as UserMessageEvent;
+  const records: Goodreactions[] = await prisma.goodreactions.findMany({
     where: { itemUserId: m.user },
   });
 
   const userMap = new Map<string, number>();
   const channelMap = new Map<string, number>();
-  records.forEach((r: { reactionUserId: any; itemChannel: any }) => {
+  records.forEach((r) => {
     let userCount = userMap.get(r.reactionUserId) || 0;
     userMap.set(r.reactionUserId, userCount + 1);
 
@@ -196,10 +202,11 @@ app.event('reaction_removed', async ({ event, client }) => {
 
 // 入退出メッセージ機能
 import * as fs from 'fs';
+import { prisma } from './prisma';
 const joinMessagesFileName = './join_messages.json';
 const leftMessagesFileName = './left_messages.json';
-let joinMessages = new Map(); // key: チャンネルID, value: 入室メッセージ
-let leftMessages = new Map(); // key: チャンネルID, value: 退出メッセージ
+let joinMessages = new Map<string, string>(); // key: チャンネルID, value: 入室メッセージ
+let leftMessages = new Map<string, string>(); // key: チャンネルID, value: 退出メッセージ
 
 function saveJoinMessages() {
   fs.writeFileSync(
@@ -240,7 +247,7 @@ function loadChannelEventMessages() {
 app.message(
   /^(参加|入室)メッセージを登録して (.*)/i,
   async ({ message, say }) => {
-    const m = message as GenericMessageEvent;
+    const m = message as UserMessageEvent;
     const parsed = m.text!.split(/^(参加|入室)メッセージを登録して /);
     if (parsed.length === 3) {
       const joinMessage = parsed[2].replace('\n', '\\n');
@@ -258,7 +265,7 @@ app.message(
 
 // 発言したチャンネルの入室メッセージの設定を解除する
 app.message(/^(参加|入室)メッセージを消して/i, async ({ message, say }) => {
-  const m = message as GenericMessageEvent;
+  const m = message as UserMessageEvent;
   if (joinMessages.has(m.channel)) {
     joinMessages.delete(m.channel);
     saveJoinMessages();
@@ -270,7 +277,7 @@ app.message(/^(参加|入室)メッセージを消して/i, async ({ message, sa
 
 // 発言したチャンネルの入室メッセージの設定を確認する
 app.message(/^(参加|入室)メッセージを見せて/i, async ({ message, say }) => {
-  const m = message as GenericMessageEvent;
+  const m = message as UserMessageEvent;
   const value = joinMessages.get(m.channel);
   if (value) {
     const message = value.replace(/\\n/g, '\n');
@@ -284,7 +291,7 @@ app.message(/^(参加|入室)メッセージを見せて/i, async ({ message, sa
 app.message(
   /^(退出|退室)メッセージを登録して (.*)/i,
   async ({ message, say }) => {
-    const m = message as GenericMessageEvent;
+    const m = message as UserMessageEvent;
     const parsed = m.text!.split(/^(退出|退室)メッセージを登録して /);
     if (parsed.length === 3) {
       const leftMessage = parsed[2].replace('\n', '\\n');
@@ -302,7 +309,7 @@ app.message(
 
 // 発言したチャンネルの入室メッセージの設定を解除する
 app.message(/^(退出|退室)メッセージを消して/i, async ({ message, say }) => {
-  const m = message as GenericMessageEvent;
+  const m = message as UserMessageEvent;
   if (leftMessages.has(m.channel)) {
     leftMessages.delete(m.channel);
     saveLeftMessages();
@@ -314,7 +321,7 @@ app.message(/^(退出|退室)メッセージを消して/i, async ({ message, sa
 
 // 発言したチャンネルの入室メッセージの設定を確認する
 app.message(/^(退出|退室)メッセージを見せて/i, async ({ message, say }) => {
-  const m = message as GenericMessageEvent;
+  const m = message as UserMessageEvent;
   const value = leftMessages.get(m.channel);
   if (value) {
     const message = value.replace(/\\n/g, '\n');
