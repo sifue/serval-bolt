@@ -112,6 +112,20 @@ app.event('reaction_added', async ({ event, client }) => {
   if (itemUserId === reactionUserId) return; // セルフいいねを除外
   if (!itemUserId) return; // itemUserIdが空であるパターンを除外
 
+  // 同一ユーザーが同一メッセージに既にリアクション済みならスキップ（リアクションの付け外しによるカウント操作を防止）
+  const existing = await prisma.goodreactions.findUnique({
+    where: {
+      itemUserId_reactionUserId_itemChannel_itmeType_itemTs: {
+        itemUserId,
+        reactionUserId,
+        itemChannel,
+        itmeType,
+        itemTs,
+      },
+    },
+  });
+  if (existing) return;
+
   // Goodreactionsへの保存
   await prisma.goodreactions.create({
     data: {
