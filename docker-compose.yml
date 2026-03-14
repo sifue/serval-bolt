@@ -16,9 +16,6 @@ services:
     volumes:
       # バインドマウント
       - ./join_messages.json:/home/node/serval-bolt/join_messages.json
-      # 名前付きボリューム
-      - serval-bolt-node-modules:/home/node/serval-bolt/node_modules
-      - serval-bolt-dist:/home/node/serval-bolt/dist
     networks:
       - app-net
     depends_on:

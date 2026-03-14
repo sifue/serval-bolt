@@ -1,7 +1,7 @@
 # 参考
 # https://nodejs.org/ja/docs/guides/nodejs-docker-webapp/
 # https://zenn.dev/dove/articles/d02f66cc0aa5c3
-FROM node:25-alpine
+FROM node:24-alpine
 
 ENV LANG=ja_JP.UTF-8
 ENV HOME=/home/node
@@ -27,19 +27,15 @@ ENV PATH=$PATH:/home/node/.npm-global/bin
 # アプリケーションの依存関係をインストールする
 # ワイルドカードを使用して、package.json と package-lock.json の両方が確実にコピーされるようにします。
 # 可能であれば (npm@5+)
-COPY package*.json ./
-
-# すべてのファイルをnodeユーザーのものに
-RUN chown -R node:node .
+COPY --chown=node:node package*.json ./
 
 USER node
 
 RUN echo "WORKDIR is $WORKDIR . HOME is $HOME . LANG is $LANG ." && npm config list
 
-# prismaのグローバルインストール
-# RUN npm i -g prisma
-
-RUN npm install
+# キャッシュを利用して依存関係をインストールする
+RUN --mount=type=cache,uid=1000,target=/home/node/.npm \
+    npm ci
 
 # アプリケーションのソースをバンドルする
 # USER node 以降でもビルドできるように所有者を明示する
