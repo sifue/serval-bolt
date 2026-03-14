@@ -15,9 +15,61 @@ const app = new App({
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
+const reactionCooldownSeconds = Number(
+  process.env.GOOD_REACTION_COOLDOWN_SECONDS || '3600'
+);
 
 function nowStr(): String {
   return new Date().toISOString();
+}
+
+function isPlusOneReaction(reaction: string): boolean {
+  return reaction.indexOf('+1') !== -1;
+}
+
+function isReactionCooldownExpired(
+  lastCountedEventTs: string | null,
+  eventTs: string
+): boolean {
+  if (!lastCountedEventTs) return true;
+
+  const lastCountedAt = Number(lastCountedEventTs);
+  const currentEventAt = Number(eventTs);
+
+  if (Number.isNaN(lastCountedAt) || Number.isNaN(currentEventAt)) {
+    return true;
+  }
+
+  return currentEventAt - lastCountedAt >= reactionCooldownSeconds;
+}
+
+async function incrementGoodcount(userId: string): Promise<number> {
+  const record = await prisma.goodcounts.upsert({
+    where: { userId },
+    update: { goodcount: { increment: 1 } },
+    create: { userId, goodcount: 1 },
+  });
+
+  return record.goodcount;
+}
+
+async function decrementGoodcount(userId: string): Promise<number> {
+  const record = await prisma.goodcounts.findUnique({
+    where: { userId },
+  });
+
+  if (!record) {
+    await prisma.goodcounts.create({ data: { userId, goodcount: 0 } });
+    return 0;
+  }
+
+  const goodcount = record.goodcount > 0 ? record.goodcount - 1 : 0;
+  await prisma.goodcounts.update({
+    where: { userId },
+    data: { goodcount },
+  });
+
+  return goodcount;
 }
 
 // 動作確認用 ping コマンド
@@ -46,7 +98,7 @@ app.message(/^いいねいくつ/, async ({ message, say }) => {
 app.message(/^いいねの統計教えて/, async ({ message, say }) => {
   const m = message as GenericMessageEvent;
   const records = await prisma.goodreactions.findMany({
-    where: { itemUserId: m.user },
+    where: { itemUserId: m.user, counted: true, isActive: true },
   });
 
   const userMap = new Map<string, number>();
@@ -108,35 +160,69 @@ app.event('reaction_added', async ({ event, client }) => {
   const itemTs = i.ts;
   const eventTs = event.event_ts;
 
-  if (event.reaction.indexOf('+1') == -1) return; // いいね以外を除外
+  if (!isPlusOneReaction(event.reaction)) return; // いいね以外を除外
   if (itemUserId === reactionUserId) return; // セルフいいねを除外
   if (!itemUserId) return; // itemUserIdが空であるパターンを除外
 
-  // Goodreactionsへの保存
-  await prisma.goodreactions.create({
-    data: {
+  // 同一リアクションの存在を確認
+  const reactionWhere = {
+    itemUserId_reactionUserId_itemChannel_itmeType_itemTs: {
       itemUserId,
       reactionUserId,
       itemChannel,
       itmeType,
       itemTs,
-      eventTs,
     },
+  };
+  const existingReaction = await prisma.goodreactions.findUnique({
+    where: reactionWhere,
   });
 
-  // Goodcountsのインクリメント
-  const record = await prisma.goodcounts.findUnique({
-    where: { userId: event.item_user },
-  });
-  const goodcount = record ? record.goodcount + 1 : 1;
-  if (record) {
-    await prisma.goodcounts.update({
-      where: { userId: itemUserId },
-      data: { goodcount },
+  // すでにアクティブなリアクションが存在する場合は何もしない
+  if (existingReaction?.isActive) return;
+
+  // クールダウンの判定
+  const shouldCount = isReactionCooldownExpired(
+    existingReaction?.lastCountedEventTs || null,
+    eventTs
+  );
+
+  if (existingReaction) {
+    await prisma.goodreactions.update({
+      where: reactionWhere,
+      data: {
+        eventTs,
+        isActive: true,
+        counted: shouldCount,
+        lastCountedEventTs: shouldCount
+          ? eventTs
+          : existingReaction.lastCountedEventTs,
+      },
     });
   } else {
-    await prisma.goodcounts.create({ data: { userId: itemUserId, goodcount } });
+    await prisma.goodreactions.create({
+      data: {
+        itemUserId,
+        reactionUserId,
+        itemChannel,
+        itmeType,
+        itemTs,
+        eventTs,
+        isActive: true,
+        counted: shouldCount,
+        lastCountedEventTs: shouldCount ? eventTs : null,
+      },
+    });
   }
+
+  if (!shouldCount) {
+    console.log(
+      `[${nowStr()}][INFO] Skip Goodreaction cooldown itemUserId: ${itemUserId} reactionUserId: ${reactionUserId} eventTs: ${eventTs}`
+    );
+    return;
+  }
+
+  const goodcount = await incrementGoodcount(itemUserId);
 
   // 記念メッセージ
   if (goodcount === 10 || goodcount === 50 || goodcount % 100 === 0) {
@@ -147,12 +233,12 @@ app.event('reaction_added', async ({ event, client }) => {
   }
 
   console.log(
-    `[${nowStr()}][INFO] Add Goodreaction goodcount: ${goodcount} itemUserId: ${itemUserId} reactionUserId: ${reactionUserId} eventTs: ${eventTs}`,
+    `[${nowStr()}][INFO] Add Goodreaction goodcount: ${goodcount} itemUserId: ${itemUserId} reactionUserId: ${reactionUserId} eventTs: ${eventTs}`
   );
 });
 
 // リアクション削除に対する対応
-app.event('reaction_removed', async ({ event, client }) => {
+app.event('reaction_removed', async ({ event }) => {
   const i = event.item as ReactionMessageItem;
   const itemUserId = event.item_user;
   const reactionUserId = event.user;
@@ -161,36 +247,42 @@ app.event('reaction_removed', async ({ event, client }) => {
   const itemTs = i.ts;
   const eventTs = event.event_ts;
 
-  if (event.reaction.indexOf('+1') == -1) return; // いいね以外を除外
+  if (!isPlusOneReaction(event.reaction)) return; // いいね以外を除外
   if (itemUserId === reactionUserId) return; // セルフいいねを除外
+  if (!itemUserId) return; // itemUserIdが空であるパターンを除外
 
-  // Goodreactionsの削除
-  await prisma.goodreactions.deleteMany({
-    where: {
+  const reactionWhere = {
+    itemUserId_reactionUserId_itemChannel_itmeType_itemTs: {
       itemUserId,
       reactionUserId,
       itemChannel,
       itmeType,
       itemTs,
     },
+  };
+  const existingReaction = await prisma.goodreactions.findUnique({
+    where: reactionWhere,
   });
 
-  // Goodcountsのデクリメント
-  const record = await prisma.goodcounts.findUnique({
-    where: { userId: event.item_user },
+  if (!existingReaction || !existingReaction.isActive) return;
+
+  // Goodreactionsの状態を非アクティブ化
+  await prisma.goodreactions.update({
+    where: reactionWhere,
+    data: {
+      eventTs,
+      isActive: false,
+      counted: false,
+    },
   });
-  const goodcount = record && record.goodcount > 0 ? record.goodcount - 1 : 0;
-  if (record) {
-    await prisma.goodcounts.update({
-      where: { userId: itemUserId },
-      data: { goodcount },
-    });
-  } else {
-    await prisma.goodcounts.create({ data: { userId: itemUserId, goodcount } });
+
+  let goodcount = 0;
+  if (existingReaction.counted) {
+    goodcount = await decrementGoodcount(itemUserId);
   }
 
   console.log(
-    `[${nowStr()}][INFO] Remove Goodreaction goodcount: ${goodcount} itemUserId: ${itemUserId} reactionUserId: ${reactionUserId} eventTs: ${eventTs}`,
+    `[${nowStr()}][INFO] Remove Goodreaction goodcount: ${goodcount} itemUserId: ${itemUserId} reactionUserId: ${reactionUserId} eventTs: ${eventTs}`
   );
 });
 
@@ -205,7 +297,7 @@ function saveJoinMessages() {
   fs.writeFileSync(
     joinMessagesFileName,
     JSON.stringify(Array.from(joinMessages)),
-    'utf8',
+    'utf8'
   );
 }
 
@@ -213,7 +305,7 @@ function saveLeftMessages() {
   fs.writeFileSync(
     leftMessagesFileName,
     JSON.stringify(Array.from(leftMessages)),
-    'utf8',
+    'utf8'
   );
 }
 
@@ -249,11 +341,11 @@ app.message(
       await say(
         `入室メッセージを登録したよ。\n登録された入室メッセージ:\n\n${joinMessage.replace(
           '\\n',
-          '\n',
-        )}`,
+          '\n'
+        )}`
       );
     }
-  },
+  }
 );
 
 // 発言したチャンネルの入室メッセージの設定を解除する
@@ -293,11 +385,11 @@ app.message(
       await say(
         `退出メッセージを登録したよ。\n登録された退出メッセージ:\n\n${leftMessage.replace(
           '\\n',
-          '\n',
-        )}`,
+          '\n'
+        )}`
       );
     }
-  },
+  }
 );
 
 // 発言したチャンネルの入室メッセージの設定を解除する

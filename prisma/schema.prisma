@@ -11,18 +11,23 @@ generator client {
 }
 
 model Goodcounts {
-  userId      String   @id @db.VarChar(255)
-  goodcount   Int
+  userId    String @id @db.VarChar(255)
+  goodcount Int
+
   @@index([goodcount])
 }
 
 model Goodreactions {
-  itemUserId       String   @db.VarChar(255)
-  reactionUserId   String   @db.VarChar(255)
-  itemChannel      String   @db.VarChar(255)
-  itmeType         String   @db.VarChar(255)
-  itemTs           String   @db.VarChar(255)
-  eventTs          String   @db.VarChar(255)
+  itemUserId         String  @db.VarChar(255)
+  reactionUserId     String  @db.VarChar(255)
+  itemChannel        String  @db.VarChar(255)
+  itmeType           String  @db.VarChar(255)
+  itemTs             String  @db.VarChar(255)
+  eventTs            String  @db.VarChar(255)
+  isActive           Boolean @default(true)
+  counted            Boolean @default(true)
+  lastCountedEventTs String? @db.VarChar(255)
+
   @@id([itemUserId, reactionUserId, itemChannel, itmeType, itemTs])
   @@index([eventTs])
 }

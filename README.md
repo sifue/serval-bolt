@@ -9,6 +9,7 @@
 
 :+1: の数(厳密には `+1` を含むリアクション肌の色バリエーションなど)をカウントします。<br>
 特定の数になると本人を褒めるメッセージを送信します。
+同じユーザーが同じメッセージに対して短時間で付け直しても、クールダウン中は再加算されません。
 
 | コマンド           | 説明                                                         | 補足                               |
 | ------------------ | ------------------------------------------------------------ | ---------------------------------- |
@@ -140,6 +141,9 @@ SLACK_APP_TOKEN=xapp-1-xxxxxxx-xxxxxxx-xxxxxxx-xxxxxxx
 NAME_SUFFIX=
 POSTGRES_PORT=5432
 DATABASE_URL="postgresql://postgres:passw0rd@serval-bolt-db:5432/serval_bolt?schema=public"
+
+# いいねつけ外しのスパムを防ぐためのクールダウン
+GOOD_REACTION_COOLDOWN_SECONDS=3600
 ```
 
 `join_messages.json` ファイルと`left_messages.json` ファイルを用意。このファイルは入室メッセージと退出メッセージを永続化する。
@@ -218,6 +222,9 @@ env PGPASSWORD=passw0rd psql -h 127.0.0.1 -p 5432 -U postgres -f serval_bolt_bac
 # See the documentation for all the connection string options: https://pris.ly/d/connection-strings
 
 DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:5432/serval_bolt?schema=public"
+
+# いいねつけ外しのスパムを防ぐためのクールダウン
+GOOD_REACTION_COOLDOWN_SECONDS=3600
 ```
 
 `join_messages.json` ファイルを用意。このファイルは入室メッセージを永続化する。

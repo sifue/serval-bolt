@@ -9,4 +9,7 @@ SLACK_APP_TOKEN=xapp-1-xxxxxxx-xxxxxxx-xxxxxxx-xxxxxxx
 
 NAME_SUFFIX=
 POSTGRES_PORT=5432
-DATABASE_URL="postgresql://postgres:passw0rd@serval-bolt-db:5432/serval_bolt?schema=public" 
+DATABASE_URL="postgresql://postgres:passw0rd@serval-bolt-db:5432/serval_bolt?schema=public"
+
+# いいねつけ外しのスパム対策のクールダウン時間（秒）
+GOOD_REACTION_COOLDOWN_SECONDS=300
