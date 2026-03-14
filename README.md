@@ -89,9 +89,9 @@
 
 Docker での動作方法は以下に記載。もしくは
 
-- Node.js v14.17.2
-- TypeScript Version 4.3.5
-- PostgreSQL 12.7
+- Node.js >= v24.14.0
+- TypeScript Version >= 5.9.3
+- PostgreSQL >= 12.7
 
 こちらでも実行可能必要なコマンドは `Dockerfile` などを見て構築方法を確認のこと。長期運用するならば Docker を利用しない方がパフォーマンスが安定している。
 
