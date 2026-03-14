@@ -142,7 +142,7 @@ app.event('reaction_added', async ({ event, client }) => {
   if (goodcount === 10 || goodcount === 50 || goodcount % 100 === 0) {
     await client.chat.postMessage({
       channel: i.channel,
-      text: `<@${itemUserId}>ちゃん、すごーい！記念すべき ${goodcount} 回目のいいねだよ！おめでとー！`,
+      text: `<@${itemUserId}>ちゃん、すごーい！ <@${reactionUserId}>が記念すべき ${goodcount} 回目のいいねをくれたよ！おめでとー！`,
     });
   }
 
