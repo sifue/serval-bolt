@@ -34,14 +34,14 @@
 
 ### 入室メッセージ登録時のコマンド実行例
 
-```
+```text
 %USERNAME% さん、いらっしゃい！
 ここは %ROOMNAME% です！
 ```
 
 上記のメッセージを登録する場合は、以下のようにします。
 
-```
+```text
 入室メッセージを登録して %USERNAME% さん、いらっしゃい！
 ここは %ROOMNAME% です！
 ```
@@ -71,14 +71,14 @@
 
 例えば、以下の文章を入室メッセージに登録していたとします。
 
-```
+```text
 %USERNAME% さん、いらっしゃい！
 ここは %ROOMNAME% です！
 ```
 
 この状態で、 `あ` という名前の人が `programming` という名前のチャンネルに参加した場合、以下のようになります。
 
-```
+```text
 @あ さん、いらっしゃい！
 ここは #programming です！
 ```
@@ -127,7 +127,7 @@ Docker での動作方法は以下に記載。もしくは
 
 `.env` ファイルに以下を記載、作製した Slack のトークンと PostgreSQL のポートなどのプロパティを設定。`_env`ファイルをコピーして作成。
 
-```
+```environment
 SLACK_BOT_TOKEN=xoxb-xxxxxxx-xxxxxxx-xxxxxxx-xxxxxxx
 SLACK_APP_TOKEN=xapp-1-xxxxxxx-xxxxxxx-xxxxxxx-xxxxxxx
 
@@ -144,7 +144,7 @@ DATABASE_URL="postgresql://postgres:passw0rd@serval-bolt-db:5432/serval_bolt?sch
 
 `join_messages.json` ファイルと`left_messages.json` ファイルを用意。このファイルは入室メッセージと退出メッセージを永続化する。
 
-```
+```json
 []
 ```
 
@@ -152,7 +152,7 @@ DATABASE_URL="postgresql://postgres:passw0rd@serval-bolt-db:5432/serval_bolt?sch
 
 ## 起動
 
-```
+```shell
 docker compose up -d --build
 ```
 
@@ -160,49 +160,49 @@ docker compose up -d --build
 
 ## 起動確認
 
-```
+```shell
 docker compose ps
 ```
 
 ## ログ確認
 
-```
+```shell
 docker compose logs
 ```
 
 ## 終了
 
-```
+```shell
 docker compose down
 ```
 
 ## アプリ側の Linux の動作確認
 
-```
+```shell
 docker compose exec app /bin/sh
 ```
 
 ## DB 側の Linux の動作確認
 
-```
+```shell
 docker compose exec db /bin/sh
 ```
 
 ## アプリだけ停止 (DB の更新のために利用)
 
-```
+```shell
 docker compose rm -fsv app
 ```
 
 ## DB のバックアップ (要 PostgreSQL Clinet)
 
-```
+```shell
 env PGPASSWORD=passw0rd pg_dump -h 127.0.0.1 -p 5432 -U postgres serval_bolt > serval_bolt_backup
 ```
 
 ## DB のリストア (要 PostgreSQL Clinet)
 
-```
+```shell
 env PGPASSWORD=passw0rd psql -h 127.0.0.1 -p 5432 -U postgres -f serval_bolt_backup serval_bolt
 ```
 
@@ -210,7 +210,7 @@ env PGPASSWORD=passw0rd psql -h 127.0.0.1 -p 5432 -U postgres -f serval_bolt_bac
 
 `.env` ファイルに以下を記載、作製した Slack のトークンと PostgreSQL のポートなどのプロパティを設定。`_env`ファイルをコピーして作成。
 
-```
+```environment
 # Environment variables declared in this file are automatically made available to Prisma.
 # See the documentation for more detail: https://pris.ly/d/prisma-schema#using-environment-variables
 
@@ -222,7 +222,7 @@ DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:5432/serval_bolt?schema=p
 
 `join_messages.json` ファイルを用意。このファイルは入室メッセージを永続化する。
 
-```
+```json
 []
 ```
 
@@ -230,7 +230,7 @@ DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:5432/serval_bolt?schema=p
 
 ## 起動
 
-```
+```shell
 npm i
 npx prisma generate
 npx run build
