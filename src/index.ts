@@ -20,6 +20,15 @@ function nowStr(): String {
   return new Date().toISOString();
 }
 
+type GoodcountRow = {
+  goodcount: number | bigint;
+};
+
+function goodcountToNumber(value: number | bigint | undefined): number {
+  if (typeof value === 'bigint') return Number(value);
+  return value || 0;
+}
+
 // 動作確認用 ping コマンド
 app.message(/^ping serval-bolt/, async ({ message, say }) => {
   const m = message as GenericMessageEvent;
@@ -112,31 +121,52 @@ app.event('reaction_added', async ({ event, client }) => {
   if (itemUserId === reactionUserId) return; // セルフいいねを除外
   if (!itemUserId) return; // itemUserIdが空であるパターンを除外
 
-  // Goodreactionsへの保存
-  await prisma.goodreactions.create({
-    data: {
-      itemUserId,
-      reactionUserId,
-      itemChannel,
-      itmeType,
-      itemTs,
-      eventTs,
-    },
-  });
-
-  // Goodcountsのインクリメント
-  const record = await prisma.goodcounts.findUnique({
-    where: { userId: event.item_user },
-  });
-  const goodcount = record ? record.goodcount + 1 : 1;
-  if (record) {
-    await prisma.goodcounts.update({
-      where: { userId: itemUserId },
-      data: { goodcount },
-    });
-  } else {
-    await prisma.goodcounts.create({ data: { userId: itemUserId, goodcount } });
-  }
+  // Goodreactionsへの保存とGoodcountsのインクリメントを同一トランザクションで行う
+  // 同じリアクション追加イベントが重複して来ても、Goodreactionsが新規作成された場合だけカウントを増やす
+  const [addRows] = await prisma.$transaction([
+    prisma.$queryRaw<GoodcountRow[]>`
+      WITH inserted AS (
+        INSERT INTO "Goodreactions" (
+          "itemUserId",
+          "reactionUserId",
+          "itemChannel",
+          "itmeType",
+          "itemTs",
+          "eventTs"
+        )
+        VALUES (
+          ${itemUserId},
+          ${reactionUserId},
+          ${itemChannel},
+          ${itmeType},
+          ${itemTs},
+          ${eventTs}
+        )
+        ON CONFLICT (
+          "itemUserId",
+          "reactionUserId",
+          "itemChannel",
+          "itmeType",
+          "itemTs"
+        ) DO NOTHING
+        RETURNING 1
+      ),
+      upserted AS (
+        INSERT INTO "Goodcounts" ("userId", "goodcount")
+        SELECT ${itemUserId}, 1
+        WHERE EXISTS (SELECT 1 FROM inserted)
+        ON CONFLICT ("userId") DO UPDATE
+          SET "goodcount" = "Goodcounts"."goodcount" + 1
+        RETURNING "goodcount"
+      )
+      SELECT COALESCE(
+        (SELECT "goodcount" FROM upserted),
+        (SELECT "goodcount" FROM "Goodcounts" WHERE "userId" = ${itemUserId}),
+        0
+      ) AS "goodcount"
+    `,
+  ]);
+  const goodcount = goodcountToNumber(addRows[0]?.goodcount);
 
   // 記念メッセージ
   if (goodcount === 10 || goodcount === 50 || goodcount % 100 === 0) {
@@ -147,7 +177,7 @@ app.event('reaction_added', async ({ event, client }) => {
   }
 
   console.log(
-    `[${nowStr()}][INFO] Add Goodreaction goodcount: ${goodcount} itemUserId: ${itemUserId} reactionUserId: ${reactionUserId} eventTs: ${eventTs}`,
+    `[${nowStr()}][INFO] Add Goodreaction goodcount: ${goodcount} itemUserId: ${itemUserId} reactionUserId: ${reactionUserId} eventTs: ${eventTs}`
   );
 });
 
@@ -163,34 +193,41 @@ app.event('reaction_removed', async ({ event, client }) => {
 
   if (event.reaction.indexOf('+1') == -1) return; // いいね以外を除外
   if (itemUserId === reactionUserId) return; // セルフいいねを除外
+  if (!itemUserId) return; // itemUserIdが空であるパターンを除外
 
-  // Goodreactionsの削除
-  await prisma.goodreactions.deleteMany({
-    where: {
-      itemUserId,
-      reactionUserId,
-      itemChannel,
-      itmeType,
-      itemTs,
-    },
-  });
-
-  // Goodcountsのデクリメント
-  const record = await prisma.goodcounts.findUnique({
-    where: { userId: event.item_user },
-  });
-  const goodcount = record && record.goodcount > 0 ? record.goodcount - 1 : 0;
-  if (record) {
-    await prisma.goodcounts.update({
-      where: { userId: itemUserId },
-      data: { goodcount },
-    });
-  } else {
-    await prisma.goodcounts.create({ data: { userId: itemUserId, goodcount } });
-  }
+  // Goodreactionsの削除とGoodcountsのデクリメントを同一トランザクションで行う
+  // 実際にGoodreactionsが削除された場合だけカウントを減らす
+  const [removeRows] = await prisma.$transaction([
+    prisma.$queryRaw<GoodcountRow[]>`
+      WITH deleted AS (
+        DELETE FROM "Goodreactions"
+        WHERE
+          "itemUserId" = ${itemUserId}
+          AND "reactionUserId" = ${reactionUserId}
+          AND "itemChannel" = ${itemChannel}
+          AND "itmeType" = ${itmeType}
+          AND "itemTs" = ${itemTs}
+        RETURNING 1
+      ),
+      updated AS (
+        UPDATE "Goodcounts"
+        SET "goodcount" = GREATEST("goodcount" - 1, 0)
+        WHERE
+          "userId" = ${itemUserId}
+          AND EXISTS (SELECT 1 FROM deleted)
+        RETURNING "goodcount"
+      )
+      SELECT COALESCE(
+        (SELECT "goodcount" FROM updated),
+        (SELECT "goodcount" FROM "Goodcounts" WHERE "userId" = ${itemUserId}),
+        0
+      ) AS "goodcount"
+    `,
+  ]);
+  const goodcount = goodcountToNumber(removeRows[0]?.goodcount);
 
   console.log(
-    `[${nowStr()}][INFO] Remove Goodreaction goodcount: ${goodcount} itemUserId: ${itemUserId} reactionUserId: ${reactionUserId} eventTs: ${eventTs}`,
+    `[${nowStr()}][INFO] Remove Goodreaction goodcount: ${goodcount} itemUserId: ${itemUserId} reactionUserId: ${reactionUserId} eventTs: ${eventTs}`
   );
 });
 
@@ -205,7 +242,7 @@ function saveJoinMessages() {
   fs.writeFileSync(
     joinMessagesFileName,
     JSON.stringify(Array.from(joinMessages)),
-    'utf8',
+    'utf8'
   );
 }
 
@@ -213,7 +250,7 @@ function saveLeftMessages() {
   fs.writeFileSync(
     leftMessagesFileName,
     JSON.stringify(Array.from(leftMessages)),
-    'utf8',
+    'utf8'
   );
 }
 
@@ -249,11 +286,11 @@ app.message(
       await say(
         `入室メッセージを登録したよ。\n登録された入室メッセージ:\n\n${joinMessage.replace(
           '\\n',
-          '\n',
-        )}`,
+          '\n'
+        )}`
       );
     }
-  },
+  }
 );
 
 // 発言したチャンネルの入室メッセージの設定を解除する
@@ -293,11 +330,11 @@ app.message(
       await say(
         `退出メッセージを登録したよ。\n登録された退出メッセージ:\n\n${leftMessage.replace(
           '\\n',
-          '\n',
-        )}`,
+          '\n'
+        )}`
       );
     }
-  },
+  }
 );
 
 // 発言したチャンネルの入室メッセージの設定を解除する
